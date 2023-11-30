@@ -25,7 +25,6 @@ function run_write_tests() {
   local niterations=$3
 
   echo "# mode: write"
-  echo "# path: ${tempfile_path}"
   for i in `seq 1 $niterations`; do
     sync >/dev/null 2>&1
     dd if=/dev/zero of=$tempfile_path bs=1M count=1024 2>&1
@@ -38,7 +37,6 @@ function run_read_tests() {
   local niterations=$3
 
   echo "# mode: read"
-  echo "# path: ${tempfile_path}"
   for i in `seq 1 $niterations`; do
     drop_caches >/dev/null 2>&1
     dd if=$tempfile_path of=/dev/null bs=1M count=1024 2>&1
@@ -46,8 +44,10 @@ function run_read_tests() {
 }
 
 function write_header() {
+  local tempfile_path=$1
   echo "# timestamp: $(date -Iseconds)"
   echo "# uname: $(uname -a)"
+  echo "# path: ${tempfile_path}"
   echo
 }
 
@@ -57,28 +57,29 @@ function fatal() {
 }
 
 function cleanup() {
+  local tempfile_path="$1"
+
   echo "Clearing sudo credentials"
   sudo -K
 
-  echo "Removing temporary files"
-  if [ -n "$TEMPFILE_NAME" ]; then
-    test -f $HOME/$TEMPFILE_NAME && rm -f $HOME/$TEMPFILE_NAME
-    test -f /tmp/$TEMPFILE_NAME && rm -f /tmp/$TEMPFILE_NAME
-  fi
-
+  echo "Removing temporary file ${tempfile_path}"
+  rm -f $tempfile_path
 }
 
-# Clean up temp files on exit
-trap cleanup SIGHUP SIGINT SIGQUIT SIGABRT
-
-# Argument processing - pull out option flags
+# Argument processing - pull out and set option flags
 positional_args=()
 niterations=$NITERATIONS_DEFAULT
+output_dir="./"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -niter)
+    -n)
       niterations="$2"
+      shift
+      shift
+      ;;
+    -o)
+      output_dir="$2"
       shift
       shift
       ;;
@@ -96,9 +97,11 @@ done
 # restore positional arguments as $1 $2 ...
 set -- "${positional_args[@]}"
 
-results_filename=$1
-shift
-test -z "${results_filename}" && fatal "Usage: io-perf [-n niterations] results_filename path1 [path2 path3 ...]"
+tempfile_path="$1"
+test -z "${tempfile_path}" && fatal "Usage: io-perf [-n niterations -o output_dir] tempfile_path"
+
+# Clean up temp files on exit
+trap "cleanup ${tempfile_path}" EXIT SIGHUP SIGINT SIGQUIT SIGABRT
 
 # Authorise with sudo to run tests
 echo "Sudo access required for dropping caches in read tests."
@@ -106,11 +109,7 @@ sudo -v
 echo
 
 # Run tests
-write_header $results_filename > $results_filename
-
-for tempfile_path in $@; do
-  run_write_tests $results_filename $tempfile_path $niterations >> $results_filename
-  run_read_tests $results_filename $tempfile_path $niterations >> $results_filename
-done
-
-exit
+results_filename=${output_dir}/$(date '+%Y%m%d%H%M').log
+write_header $tempfile_path > $results_filename
+run_write_tests $results_filename $tempfile_path $niterations >> $results_filename
+run_read_tests $results_filename $tempfile_path $niterations >> $results_filename
