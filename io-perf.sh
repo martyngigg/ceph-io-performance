@@ -2,14 +2,14 @@
 # Run IO tests with dd command
 # It requires sudo for clearing VM caches
 TEMPFILE_NAME=tempfile
-NRUNS=5
+NRUNS=1
 
 function drop_caches() {
   # macOS uses purge to drop caches
-  if [ -n "$(which purge)" ]; then
+  if which purge >/dev/null 2>&1; then
     sync
     sudo purge
-  elif [ -n "$(which sysctl)" ]; then
+  elif which sysctl >/dev/null 2>&1; then
     sudo sysctl -w vm.drop_caches=3
   else
     echo "Unable to find sysctl or purge commands. Cannot purge fs caches"
@@ -62,6 +62,7 @@ trap cleanup SIGHUP SIGINT SIGQUIT SIGABRT
 # Authorise with sudo to run tests
 echo "Sudo access required for dropping caches in read tests."
 sudo -v
+echo
 
 # ---------- HOME ----------
 run_io_tests $HOME/$TEMPFILE_NAME
