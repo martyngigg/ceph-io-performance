@@ -2,7 +2,7 @@
 # Run IO tests with dd command
 # It requires sudo for clearing VM caches
 TEMPFILE_NAME=tempfile
-NRUNS=1
+NRUNS_DEFAULT=5
 
 function drop_caches() {
   # macOS uses purge to drop caches
@@ -20,16 +20,18 @@ function drop_caches() {
 
 function run_io_tests() {
   local tempfile_path=$1
+  local nruns=${2:-${NRUNS_DEFAULT}}
 
-  run_write_tests $tempfile_path
-  run_read_tests $tempfile_path
+  run_write_tests $tempfile_path $nruns
+  run_read_tests $tempfile_path $nruns
 }
 
 function run_write_tests() {
   local tempfile_path=$1
+  local nruns=$2
 
-  echo "Running write tests in $tempfile_path with $NRUNS iterations"
-  for i in `seq 1 $NRUNS`; do
+  echo "Running write tests in $tempfile_path with $nruns iterations"
+  for i in `seq 1 $nruns`; do
     sync
     dd if=/dev/zero of=$tempfile_path bs=1M count=1024
   done
@@ -38,8 +40,8 @@ function run_write_tests() {
 function run_read_tests() {
   local tempfile_path=$1
 
-  echo "Running read tests in $tempfile_path with $NRUNS iterations"
-  for i in `seq 1 $NRUNS`; do
+  echo "Running read tests in $tempfile_path with $nruns iterations"
+  for i in `seq 1 $nruns`; do
     drop_caches
     dd if=$tempfile_path of=/dev/null bs=1M count=1024
   done
@@ -64,10 +66,13 @@ echo "Sudo access required for dropping caches in read tests."
 sudo -v
 echo
 
+# Argument processing
+nruns=$1
+
 # ---------- HOME ----------
-run_io_tests $HOME/$TEMPFILE_NAME
+run_io_tests $HOME/$TEMPFILE_NAME $nruns
 
 # ---------- /tmp ----------
-run_io_tests /tmp/$TEMPFILE_NAME
+run_io_tests /tmp/$TEMPFILE_NAME $nruns
 
 cleanup
