@@ -4,6 +4,7 @@
 TEMPFILE_NAME=tempfile
 NRUNS_DEFAULT=5
 
+
 function drop_caches() {
   # macOS uses purge to drop caches
   if which purge >/dev/null 2>&1; then
@@ -18,33 +19,41 @@ function drop_caches() {
   fi
 }
 
-function run_io_tests() {
-  local tempfile_path=$1
-  local nruns=${2:-${NRUNS_DEFAULT}}
-
-  run_write_tests $tempfile_path $nruns
-  run_read_tests $tempfile_path $nruns
-}
-
 function run_write_tests() {
-  local tempfile_path=$1
-  local nruns=$2
+  local results_filename=$1
+  local tempfile_path=$2
+  local nruns=$3
 
-  echo "Running write tests in $tempfile_path with $nruns iterations"
+  echo "# mode: write"
+  echo "# path: ${tempfile_path}"
   for i in `seq 1 $nruns`; do
-    sync
-    dd if=/dev/zero of=$tempfile_path bs=1M count=1024
+    sync >/dev/null 2>&1
+    dd if=/dev/zero of=$tempfile_path bs=1M count=1024 2>&1
   done
 }
 
 function run_read_tests() {
   local tempfile_path=$1
+  local tempfile_path=$2
+  local nruns=$3
 
-  echo "Running read tests in $tempfile_path with $nruns iterations"
+  echo "# mode: read"
+  echo "# path: ${tempfile_path}"
   for i in `seq 1 $nruns`; do
-    drop_caches
-    dd if=$tempfile_path of=/dev/null bs=1M count=1024
+    drop_caches >/dev/null 2>&1
+    dd if=$tempfile_path of=/dev/null bs=1M count=1024 2>&1
   done
+}
+
+function write_header() {
+  echo "# timestamp: $(date -Iseconds)"
+  echo "# uname: $(uname -a)"
+  echo
+}
+
+function fatal() {
+  echo $*
+  exit 1
 }
 
 function cleanup() {
@@ -56,9 +65,10 @@ function cleanup() {
     test -f $HOME/$TEMPFILE_NAME && rm -f $HOME/$TEMPFILE_NAME
     test -f /tmp/$TEMPFILE_NAME && rm -f /tmp/$TEMPFILE_NAME
   fi
+
 }
 
-# Clean up temp files at exit
+# Clean up temp files on exit
 trap cleanup SIGHUP SIGINT SIGQUIT SIGABRT
 
 # Authorise with sudo to run tests
@@ -67,12 +77,16 @@ sudo -v
 echo
 
 # Argument processing
-nruns=$1
+results_filename=$1
+nruns=$2
+test -z "${results_filename}" && fatal "Usage: io-perf results_filename [niterations]"
 
-# ---------- HOME ----------
-run_io_tests $HOME/$TEMPFILE_NAME $nruns
+write_header $results_filename > $results_filename
 
-# ---------- /tmp ----------
-run_io_tests /tmp/$TEMPFILE_NAME $nruns
+run_write_tests $results_filename $HOME/$TEMPFILE_NAME $nruns >> $results_filename
+run_read_tests $results_filename $HOME/$TEMPFILE_NAME $nruns >> $results_filename
 
-cleanup
+run_write_tests $results_filename /tmp/$TEMPFILE_NAME $nruns >> $results_filename
+run_read_tests $results_filename /tmp/$TEMPFILE_NAME $nruns >> $results_filename
+
+exit
