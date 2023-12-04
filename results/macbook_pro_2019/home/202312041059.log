@@ -1,0 +1,36 @@
+# timestamp: 2023-12-04T10:59:09+00:00
+# uname: Darwin NDLT1369MAC 23.1.0 Darwin Kernel Version 23.1.0: Mon Oct 9 21:27:27 PDT 2023; root:xnu-10002.41.9~6/RELEASE_X86_64 x86_64
+# path: /Users/dmn58364/tempfile
+
+# mode: write
+1024+0 records in
+1024+0 records out
+1073741824 bytes transferred in 0.436022 secs (2462586347 bytes/sec)
+1024+0 records in
+1024+0 records out
+1073741824 bytes transferred in 0.343697 secs (3124094257 bytes/sec)
+1024+0 records in
+1024+0 records out
+1073741824 bytes transferred in 0.342148 secs (3138237909 bytes/sec)
+1024+0 records in
+1024+0 records out
+1073741824 bytes transferred in 0.347448 secs (3090366973 bytes/sec)
+1024+0 records in
+1024+0 records out
+1073741824 bytes transferred in 0.350599 secs (3062592375 bytes/sec)
+# mode: read
+1024+0 records in
+1024+0 records out
+1073741824 bytes transferred in 0.350503 secs (3063431195 bytes/sec)
+1024+0 records in
+1024+0 records out
+1073741824 bytes transferred in 0.357059 secs (3007183194 bytes/sec)
+1024+0 records in
+1024+0 records out
+1073741824 bytes transferred in 0.359199 secs (2989267298 bytes/sec)
+1024+0 records in
+1024+0 records out
+1073741824 bytes transferred in 0.350032 secs (3067553321 bytes/sec)
+1024+0 records in
+1024+0 records out
+1073741824 bytes transferred in 0.363115 secs (2957029657 bytes/sec)
