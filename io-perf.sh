@@ -13,8 +13,8 @@ function drop_caches() {
   elif which sysctl >/dev/null 2>&1; then
     sudo sysctl -w vm.drop_caches=3
   else
-    echo "Unable to find sysctl or purge commands. Cannot purge fs caches"
-    echo "Read results will not reflect actual IO speeds as a previous read will have buffered the data"
+    info  "Unable to find sysctl or purge commands. Cannot purge fs caches"
+    info  "Read results will not reflect actual IO speeds as a previous read will have buffered the data"
     exit 1
   fi
 }
@@ -24,7 +24,7 @@ function run_write_tests() {
   local tempfile_path=$2
   local niterations=$3
 
-  echo "# mode: write"
+  info  "# mode: write"
   for i in `seq 1 $niterations`; do
     sync >/dev/null 2>&1
     dd if=/dev/zero of=$tempfile_path bs=1M count=1024 2>&1
@@ -36,7 +36,7 @@ function run_read_tests() {
   local tempfile_path=$2
   local niterations=$3
 
-  echo "# mode: read"
+  info  "# mode: read"
   for i in `seq 1 $niterations`; do
     drop_caches >/dev/null 2>&1
     dd if=$tempfile_path of=/dev/null bs=1M count=1024 2>&1
@@ -45,31 +45,34 @@ function run_read_tests() {
 
 function write_header() {
   local tempfile_path=$1
-  echo "# timestamp: $(date -Iseconds)"
-  echo "# uname: $(uname -a)"
-  echo "# path: ${tempfile_path}"
-  echo
+  info  "# timestamp: $(date -Iseconds)"
+  info  "# uname: $(uname -a)"
+  info  "# path: ${tempfile_path}"
+  info
+}
+
+function info() {
+  echo $*
 }
 
 function fatal() {
-  echo $*
+  info  $*
   exit 1
 }
 
 function cleanup() {
   local tempfile_path="$1"
-
-  echo "Clearing sudo credentials"
+  info  "Clearing sudo credentials"
   sudo -K
 
-  echo "Removing temporary file ${tempfile_path}"
+  info  "Removing temporary file ${tempfile_path}"
   rm -f $tempfile_path
 }
 
 # Argument processing - pull out and set option flags
 positional_args=()
 niterations=$NITERATIONS_DEFAULT
-output_dir="./"
+output_dir="."
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -84,8 +87,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -*|--*)
-      echo "Unknown option $1"
-      exit 1
+      fatal  "Unknown option $1"
       ;;
     *)
       positional_args+=("$1") # save positional arg
@@ -104,9 +106,9 @@ test -z "${tempfile_path}" && fatal "Usage: io-perf [-n niterations -o output_di
 trap "cleanup ${tempfile_path}" EXIT SIGHUP SIGINT SIGQUIT SIGABRT
 
 # Authorise with sudo to run tests
-echo "Sudo access required for dropping caches in read tests."
+info  "Sudo access required for dropping caches in read tests."
 sudo -v
-echo
+info
 
 # Run tests
 results_filename=${output_dir}/$(date '+%Y%m%d%H%M').log
