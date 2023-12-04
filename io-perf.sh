@@ -115,3 +115,4 @@ results_filename=${output_dir}/$(date '+%Y%m%d%H%M').log
 write_header $tempfile_path > $results_filename
 run_write_tests $results_filename $tempfile_path $niterations >> $results_filename
 run_read_tests $results_filename $tempfile_path $niterations >> $results_filename
+info "Results written to $results_filename"
