@@ -1,0 +1,20 @@
+# timestamp: 2023-12-04T17:16:53+00:00
+# uname: Linux host-172-16-114-130 4.18.0-513.5.1.el8_9.x86_64 #1 SMP Fri Nov 17 03:31:10 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux
+# path: /tmp/tempfile
+
+# mode: write
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 0.445813 s, 2.4 GB/s
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 1.39643 s, 769 MB/s
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 1.40525 s, 764 MB/s
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 1.37733 s, 780 MB/s
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 1.41647 s, 758 MB/s
