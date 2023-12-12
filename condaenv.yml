@@ -1,0 +1,7 @@
+name: ceph-io-performance
+
+dependencies:
+  - python=3.11
+  - pip=23.3.1
+  - pip:
+    - -r requirements.txt
