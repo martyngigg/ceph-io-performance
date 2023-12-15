@@ -33,8 +33,8 @@ def discover_results(results_dir: Path) -> Sequence[Path]:
 
 def load_results(results_files: Sequence[Path]):
     def append_to_lists(ts_list, speeds_list, json):
-        ts_list.append(json["timestamp"])
-        speeds_list.append(mean(json["speeds"]))
+        ts_list.extend(json["times"])
+        speeds_list.extend(map(to_mbs, json["speeds"]))
 
     def to_dataframe(ts_list, speeds_list):
         return pl.DataFrame(
@@ -52,22 +52,12 @@ def load_results(results_files: Sequence[Path]):
     return to_dataframe(write_ts, write_speeds), to_dataframe(read_ts, read_speeds)
 
 
-def mean(speeds_as_str: Sequence[str]) -> float:
-    """Take a list of strings such as X.Y GB/s or XYZ MB/s, converts to MB/s and takes the mean"""
-
-    def to_mbs(s):
-        parts = s.split()
-        speed = float(parts[0])
-        if "GB" in parts[1]:
-            speed *= 1024
-        return speed
-
-    num_speeds = len(speeds_as_str)
-    sum = 0.0
-    for speed in speeds_as_str:
-        sum += to_mbs(speed)
-
-    return sum / num_speeds
+def to_mbs(s):
+    parts = s.split()
+    speed = float(parts[0])
+    if "GB" in parts[1]:
+        speed *= 1024
+    return speed
 
 
 def plot(write_speeds, read_speeds):
@@ -88,7 +78,6 @@ def plot(write_speeds, read_speeds):
 def main():
     results_dir = Path(sys.argv[1]) if len(sys.argv) == 2 else fatal(USAGE)
     exit_if_not_valid_dir(results_dir)
-
     plot(*load_results(discover_results(results_dir)))
 
 

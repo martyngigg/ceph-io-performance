@@ -4,37 +4,39 @@
 niterations=5
 iflags=nocache,fullblock
 oflags=nocache
+speed_column=4
+if dd --version | head -n1 | grep 8.2 >/dev/null; then
+  speed_column=3
+fi
 
 function dd_write() {
-  dd if=/dev/zero of=$1 bs=1M count=1024 iflag=${iflags} oflag=${oflags} 2>&1 | tail -n 1 | cut -d, -f 3 | xargs
+  dd if=/dev/zero of=$1 bs=1M count=1024 iflag=${iflags} oflag=${oflags} 2>&1 | tail -n 1 | cut -d, -f $speed_column | xargs
 }
 
 # Run a dd command to read from a file and write to /dev/null. Return just the speed string
 function dd_read() {
-  dd if=$1 of=/dev/null bs=1M count=1024 iflag=${iflags} oflag=${oflags} 2>&1 | tail -n 1 | cut -d, -f 3 | xargs
+  dd if=$1 of=/dev/null bs=1M count=1024 iflag=${iflags} oflag=${oflags} 2>&1 | tail -n 1 | cut -d, -f $speed_column | xargs
 }
 
-function run_write_tests() {
-  results="{\"timestamp\": $(date +%s)"
+run_io_tests() {
+  local iofunc=$1
+  times=""
   speeds=""
   for i in `seq 1 $niterations`; do
     sync >/dev/null 2>&1
-    speed=$(dd_write $tempfile_path) 
+    speed=$($iofunc $tempfile_path)
+    times="${times}${times:+,}$(date +%s)"
     speeds="${speeds}${speeds:+,}\"$speed\""
   done
-  results="$results, \"speeds\": [$speeds]}"
-  echo $results
+  echo "{\"times\": [${times}], \"speeds\": [${speeds}]}"
 }
 
-function run_read_tests() {
-  results="{\"timestamp\": $(date +%s)"
-  speeds=""
-  for i in `seq 1 $niterations`; do
-    speed=$(dd_read $tempfile_path)
-    speeds="${speeds}${speeds:+,}\"$speed\""
-  done
-  results="$results, \"speeds\": [$speeds]}"
-  echo $results
+run_write_tests() {
+  echo $(run_io_tests dd_write)
+}
+
+run_read_tests() {
+  echo $(run_io_tests dd_read)
 }
 
 
