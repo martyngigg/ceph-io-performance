@@ -33,12 +33,12 @@ def discover_results(results_dir: Path) -> Sequence[Path]:
 
 def load_results(results_files: Sequence[Path]):
     def append_to_lists(ts_list, speeds_list, json):
-        ts_list.extend(json["times"])
-        speeds_list.extend(map(to_mbs, json["speeds"]))
+        ts_list.extend(json["times"][1:])
+        speeds_list.extend(map(to_mbs, json["speeds"][1:]))
 
     def to_dataframe(ts_list, speeds_list):
         return pl.DataFrame(
-            {"timestamp": ts_list, "average_speed_mbs": speeds_list}
+            {"timestamp": ts_list, "speed_mbs": speeds_list}
         ).with_columns(pl.from_epoch("timestamp", time_unit="s"))
 
     write_ts, write_speeds = [], []
@@ -60,16 +60,34 @@ def to_mbs(s):
     return speed
 
 
+def show_summary_statistics(write_speeds, read_speeds):
+    print("IO Summary")
+    print("----------")
+    print()
+    print("Write speed (MB/s):")
+    print(f"  Min    : {write_speeds['speed_mbs'].min()}")
+    print(f"  Max    : {write_speeds['speed_mbs'].max()}")
+    print(f"  Mean   : {write_speeds['speed_mbs'].mean()}")
+    print()
+    print("Read speed (MB/s):")
+    print(f"  Min    : {read_speeds['speed_mbs'].min()}")
+    print(f"  Max    : {read_speeds['speed_mbs'].max()}")
+    print(f"  Mean   : {read_speeds['speed_mbs'].mean()}")
+
+
 def plot(write_speeds, read_speeds):
     fig, axes = plt.subplots(1, 2)
-    axes[0].plot(write_speeds["timestamp"], write_speeds["average_speed_mbs"], "b.")
-    axes[1].plot(read_speeds["timestamp"], read_speeds["average_speed_mbs"], "r.")
+    axes[0].plot(write_speeds["timestamp"], write_speeds["speed_mbs"], "b.")
+    axes[1].plot(read_speeds["timestamp"], read_speeds["speed_mbs"], "r.")
 
     for iotype, axes in (("write", axes[0]), ("read", axes[1])):
         axes.set_xlabel("Date")
-        axes.set_ylabel(f"Average {iotype} speed (MB/s)")
+        axes.set_ylabel(f"{iotype} speed (MB/s)")
         axes.xaxis.set_major_locator(DayLocator())
         axes.xaxis.set_major_formatter(DateFormatter("%Y-%m-%d"))
+        axes.set_xticks(
+            axes.get_xticks(), axes.get_xticklabels(), rotation=45, ha="right"
+        )
 
     fig.tight_layout()
     plt.show()
@@ -78,7 +96,10 @@ def plot(write_speeds, read_speeds):
 def main():
     results_dir = Path(sys.argv[1]) if len(sys.argv) == 2 else fatal(USAGE)
     exit_if_not_valid_dir(results_dir)
-    plot(*load_results(discover_results(results_dir)))
+
+    write_io, read_io = load_results(discover_results(results_dir))
+    show_summary_statistics(write_io, read_io)
+    plot(write_io, read_io)
 
 
 main()
